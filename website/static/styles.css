@@ -1,0 +1,153 @@
+.btn-record {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #F5F5DC; /* Beige background */
+  border: none;
+  box-shadow: 0 6px 10px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.btn-record:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.btn-record:active {
+  transform: scale(0.95);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.microphone-icon {
+  width: 50px;
+  height: 50px;
+  fill: #333; /* Dark gray color for the icon */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+}
+
+.btn-record-text {
+  position: absolute;
+  bottom: 15px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #333;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.btn-record.recording .microphone-icon {
+  fill: #ff4757; /* Red color when recording */
+}
+
+.btn-record.recording {
+  animation: pulse 1.5s ease infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 71, 87, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+  }
+}
+
+.note-card {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.note-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 30px;
+  height: 100%;
+  width: 2px;
+  background-color: #ff9999;
+}
+
+.note-header {
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.note-title {
+  margin: 0;
+  font-size: 1.2em;
+  color: #333;
+  padding: 30px;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.5em;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.delete-btn:hover {
+  color: #ff4444;
+}
+
+.note-content {
+  padding: 15px;
+  min-height: 100px;
+  background-image: linear-gradient(#e8e8e8 1px, transparent 1px);
+  background-size: 100% 2em;
+  line-height: 2em;
+  padding-top: 1.5em;
+}
+
+.note-footer {
+  background-color: #f8f8f8;
+  border-top: 1px solid #e0e0e0;
+  padding: 10px 15px;
+  font-size: 0.8em;
+  color: #777;
+}
+
+.editable:focus {
+  outline: none;
+  background-color: rgba(255, 255, 200, 0.3);
+}
+
+.editable[contenteditable="true"]:empty:before {
+  content: attr(placeholder);
+  color: #999;
+  font-style: italic;
+}
+
+.note-element {
+  padding-left: 30px; /* Adjust the padding value as needed */
+}
+
+.note-date-element {
+  padding-left: 40px; /* Adjust the padding value as needed */
+}
+
+/*.note-content {
+  font-family: 'Indie Flower', cursive;
+}*/

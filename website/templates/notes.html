@@ -1,0 +1,306 @@
+{% extends "base.html" %} 
+{% block title %}Home{% endblock %} 
+<!-- {% block content %} -->
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+  <header class="mb-auto">
+    <div>
+      <a href="/" class="text-decoration-none text-reset">
+        <h3 class="float-md-start mb-0">VoiceNotePro</h3>
+      </a>
+    </div>
+  </header>
+</div>
+
+<!-- <h1 align="center">Notes</h1> -->
+ <div class="container">
+        <!-- <h1 class="mb-4">Voice Note Taking App</h1> -->
+        <div class="row h-100 ">
+          <!-- justify-content-center align-items-center-->
+            <div class="col-12 text-center">
+              <div id="recordButtonContainer" style="display: none;">
+                <button id="recordButton" class="btn-record">
+                  <div class="microphone-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                  </div>
+                  <span class="btn-record-text">Record</span>
+                </button>
+              </div>
+                <p id="status" class="text-muted mt-3">Say "title:" followed by your title, then "note:" followed by your note content.</p>
+            </div>
+            <div class="col-md-8">
+                <div id="notesList"></div>
+            </div>
+        </div>
+  </div>
+<div class="container mt-4">
+  <div class="row" id="notes">
+    {% for note in notes %}
+    <div class="col-md-4 mb-4">
+      <div class="note-card">
+        <div class="note-header">
+          <h5 class="note-title">
+            <span id="title-{{ note.id }}" class="editable" contenteditable="true" onBlur="saveNote({{ note.id }})">{{ note.title }}</span>
+          </h5>
+          <button type="button" class="delete-btn" aria-label="Close" onClick="deleteNote({{ note.id }})">×</button>
+        </div>
+        <div class="note-content">
+          <p id="content-{{ note.id }}" class="editable note-element" contenteditable="true" onBlur="saveNote({{ note.id }})">{{ note.content }}</p>
+        </div>
+        <div class="note-footer note-date-element">
+          Created: {{ note.date.strftime('%d %b, %Y, %H:%M') if note.date else 'Date unknown' }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<!-- <ul class="list-group list-group-flush" id="notes">
+  {% for note in user.notes %}
+  <li class="list-group-item">
+    {{ note.title }}
+    {{ note.content }}
+    <button type="button" class="close" onClick="deleteNote({{ note.id }})">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </li>
+  {% endfor %}
+</ul> -->
+<!-- <form method="POST">
+  <textarea name="note" id="note" class="form-control"></textarea>
+  <br />
+  <div align="center">
+
+    <button type="submit" class="btn btn-primary">Add Note</button>
+  </div>
+
+</form> -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const recordButton = document.getElementById('recordButton');
+        const recordButtonContainer = document.getElementById('recordButtonContainer');
+        const status = document.getElementById('status');
+        const notesList = document.getElementById('notesList');
+
+        const INITIAL_STATUS = 'Say "title:" followed by your title, then "note:" followed by your note content.';
+        const RECORDING_STATUS = 'Recording... Say your title and note content.';
+        const PROCESSING_STATUS = 'Processing your note...';
+        const FINISHED_STATUS = 'Note created! Click "Record" to create another note.';
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        const originalButtonHTML = `
+          <button id="recordButton" class="btn-record">
+            <div class="microphone-icon">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </div>
+            <span class="btn-record-text">Record</span>
+          </button>
+        `;
+
+        console.log('Initial setup: recordButton =', recordButton);
+        console.log('Initial setup: recordButtonContainer =', recordButtonContainer);
+        recordButton.addEventListener('click', toggleRecording);
+
+        function updateButtonState() {
+          recordButtonContainer.style.display = 'block';
+
+          const recordButton = document.getElementById('recordButton');
+          
+          if (isRecording) {
+              recordButton.classList.add('recording');
+              recordButton.querySelector('.btn-record-text').textContent = 'Stop';
+          } else {
+              recordButtonContainer.innerHTML = originalButtonHTML;
+              const newRecordButton = document.getElementById('recordButton');
+              newRecordButton.addEventListener('click', toggleRecording);
+              updateStatus(INITIAL_STATUS);
+          }
+        }
+
+        function updateStatus(message) {
+            const statusElement = document.getElementById('status');
+            if (statusElement) {
+                statusElement.textContent = message;
+            }
+        }
+
+        function toggleRecording() {
+            console.log('Toggle recording called');
+            if (isRecording) {//{mediaRecorder && mediaRecorder.state === 'recording'
+                console.log('Stopping recording');
+                stopRecording();
+            } else {
+                console.log('Starting recording');
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    console.log('Got user media stream');
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+                    isRecording = true;
+                    updateStatus(RECORDING_STATUS);
+                    // recordButton.textContent = 'Stop';
+                    // recordButton.classList.replace('btn-primary', 'btn-danger');
+                    // status.textContent = 'Recording...';
+                    
+                    mediaRecorder.ondataavailable = event => {
+                      console.log('Data available');
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = sendAudioToServer;
+                    updateButtonState();
+                    updateStatus(INITIAL_STATUS);
+                })
+                .catch(error => {
+                    console.error('Error accessing microphone:', error);
+                    updateStatus('Error: Could not access microphone');
+                });
+              
+        }
+
+        function stopRecording() {
+            if (mediaRecorder) {
+              console.log('Stop recording function called');
+              mediaRecorder.stop();
+              isRecording = false;
+              // recordButton.textContent = 'Record';
+              // recordButton.classList.replace('btn-danger', 'btn-record');//'btn-primary'
+              updateStatus(PROCESSING_STATUS);
+              updateButtonState();
+            }
+          }
+
+        function parseNote(text) {
+        const parts = text.split(/\b(title|note)\b/i);
+        let title = 'Untitled Note';
+        let content = '';
+
+        if (parts.length >= 3) {
+            for (let i = 0; i < parts.length; i += 1) {
+                if (parts[i].toLowerCase() === 'title') {
+                    title = parts[i + 1].trim();
+                } else if (parts[i].toLowerCase() === 'note') {
+                    content = parts[i + 1].trim();
+                    break; // Stop after finding the note content
+                }
+            }
+        } else {
+            // If the format is not followed, treat everything as content
+            content = text;
+        }
+
+        return { title, content };
+    }
+
+    function sendAudioToServer() {
+        console.log('Sending audio to server');
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'recording.wav');
+        
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            const { title, content } = parseNote(data.text);
+            createNoteCard(title, content);
+            console.log('Sending to add_note:', { title, content });
+            updateStatus(FINISHED_STATUS);
+
+
+            fetch('/add_note', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ title, content }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Note added successfully:', data);
+                
+                updateStatus(FINISHED_STATUS);
+                updateStatus(INITIAL_STATUS);
+
+
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            updateStatus('Error: Could not process audio');
+        });
+
+        
+        audioChunks = [];
+        })
+      }
+
+  function createNoteCard(title, content, id) {
+      const noteCard = document.createElement('div');
+      noteCard.className = 'col-md-4 mb-4';
+      noteCard.innerHTML = `<div class="note-card">
+        <div class="note-header">
+          <h5 class="note-title">
+            <span id="title-${id}" class="editable note-element" contenteditable="true" onBlur="saveNote(${id})">${title}</span>
+          </h5>
+          <button type="button" class="delete-btn" aria-label="Close" onClick="deleteNote(${id})">×</button>
+        </div>
+        <div class="note-content">
+          <p id="content-${id}" class="editable note-element" contenteditable="true" onBlur="saveNote(${id})">${content}</p>
+        </div>
+        <div class="note-footer note-date-element">
+          Created: ${new Date().toLocaleDateString('en-UK', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
+        </div>
+      </div>
+    </div>`;
+
+      const notesList = document.getElementById('notes');
+      notesList.insertBefore(noteCard, notesList.firstChild);
+  }
+
+  function saveNote(noteId) {
+    const title = document.getElementById(`title-${noteId}`).innerText;
+    const content = document.getElementById(`content-${noteId}`).innerText;
+    
+    // Send an AJAX request to your server to save the changes
+    fetch('/save-note', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: noteId, title: title, content: content }),
+    })
+    .then(response => response.json())
+    // .then(data => {
+    //   if (data.success) {
+    //     alert('Note saved successfully');
+    //   } else {
+    //     alert('Failed to save note');
+    //   }
+    // })
+    .catch((error) => {
+      console.error('Error:', error);
+      alert('An error occurred while saving the note');
+      });
+    }
+    console.log('Calling initial updateButtonState');
+    updateButtonState();
+    updateStatus(INITIAL_STATUS);
+
+    </script>
+<!-- {% endblock %} -->
